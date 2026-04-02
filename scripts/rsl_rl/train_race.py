@@ -10,12 +10,26 @@
 import sys
 import os
 
-local_rsl_path = os.path.abspath("src/third_parties/rsl_rl_local")
+# Force this project root (~/GG) to be searched first for `src.*`
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if project_root in sys.path:
+    sys.path.remove(project_root)
+sys.path.insert(0, project_root)
+print(f"[INFO] Using project root: {project_root}")
+
+# Use local rsl_rl from this project
+local_rsl_path = os.path.join(project_root, "src", "third_parties", "rsl_rl_local")
 if os.path.exists(local_rsl_path):
+    if local_rsl_path in sys.path:
+        sys.path.remove(local_rsl_path)
     sys.path.insert(0, local_rsl_path)
     print(f"[INFO] Using local rsl_rl from: {local_rsl_path}")
 else:
     print(f"[WARNING] Local rsl_rl not found at: {local_rsl_path}")
+
+# Sanity check: this should resolve to ~/GG/src/__init__.py
+import src
+print(f"[INFO] src package loaded from: {src.__file__}")
 
 from rsl_rl.utils import wandb_fix
 import argparse
@@ -72,7 +86,9 @@ from isaaclab_tasks.utils.hydra import hydra_task_config
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
 
 # Import extensions to set up environment tasks
-import src.isaac_quad_sim2real.tasks   # noqa: F401
+# import src.isaac_quad_sim2real.tasks   # noqa: F401
+import src.isaac_quad_sim2real.tasks as my_tasks   # noqa: F401
+print(f"[INFO] Task package loaded from: {my_tasks.__file__}")
 
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
@@ -107,15 +123,44 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     # TODO ----- START ----- Define rewards scales
     # reward scales
-    progress_goal_reward_scale = 50.0
-    crash_reward = -1.0
-    death_cost = -10.0
-
     rewards = {
-        'progress_goal_reward_scale': progress_goal_reward_scale,
-        'crash_reward_scale': crash_reward,
-        'death_cost': death_cost,
+        "progress_goal_reward_scale": 2.2,
+        "center_gate_reward_scale": 0.16,
+        "gate_pass_reward_scale": 85.0,
+        "vel_forward_reward_scale": 0.07,
+        "stuck_penalty_reward_scale": -1.0,
+        "crash_reward_scale": -5.0,
+        "time_penalty_reward_scale": -0.021,
+        "death_cost": -15.0,
+        "reverse_gate_penalty_reward_scale": -1.0,
+        "wrong_side_toward_gate_penalty_reward_scale": -2.0,
     }
+
+    # rewards = {
+    #     "progress_goal_reward_scale": 2.2,
+    #     "center_gate_reward_scale": 0.16,
+    #     "gate_pass_reward_scale": 85.0,
+    #     "vel_forward_reward_scale": 0.07,
+    #     "stuck_penalty_reward_scale": -1.0,
+    #     "crash_reward_scale": -5.0,
+    #     "time_penalty_reward_scale": -0.021,
+    #     "death_cost": -15.0,
+    #     "reverse_gate_penalty_reward_scale": -1.0,
+    #     "wrong_side_toward_gate_penalty_reward_scale": -2.0,
+    # }
+    # 90
+    # rewards = {
+    #     "progress_goal_reward_scale": 2.2,
+    #     "center_gate_reward_scale": 0.12,
+    #     "gate_pass_reward_scale": 100.0,
+    #     "vel_forward_reward_scale": 0.07,
+    #     "stuck_penalty_reward_scale": 0.0,
+    #     "crash_reward_scale": -3.0,
+    #     "time_penalty_reward_scale": -0.02,
+    #     "death_cost": -15.0,
+    #     "reverse_gate_penalty_reward_scale": -1.0,
+    #     "wrong_side_toward_gate_penalty_reward_scale": -2.0,
+    # }
     # TODO ----- END -----
 
     env_cfg.is_train = True

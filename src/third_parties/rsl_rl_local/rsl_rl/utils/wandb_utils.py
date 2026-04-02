@@ -53,7 +53,11 @@ class WandbSummaryWriter(SummaryWriter):
                 raise
 
         # Change generated name to project-number format
-        wandb.run.name = project + wandb.run.name.split("-")[-1]
+        # !! we change this
+        run_name = wandb.run.name or wandb.run.id or "run"
+        wandb.run.name = project + run_name.split("-")[-1]
+
+        # wandb.run.name = project + wandb.run.name.split("-")[-1]
 
         self.name_map = {
             "Train/mean_reward/time": "Train/mean_reward_time",

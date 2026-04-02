@@ -689,6 +689,14 @@ class QuadcopterEnv(DirectRLEnv):
         if not self.cfg.is_train:
             time_out = time_out | ((self._n_gates_passed - 1) // (self._waypoints.shape[0]) >= self.cfg.max_n_laps)
 
+        if torch.any(died):
+            ids = torch.where(died)[0][:10].tolist()
+            print(f"[DONE DEBUG] died envs={ids}, crashed={self._crashed[ids].tolist() if len(ids) > 0 else []}")
+
+        if torch.any(time_out):
+            ids = torch.where(time_out)[0][:10].tolist()
+            print(f"[DONE DEBUG] timeout envs={ids}, n_gates_passed={self._n_gates_passed[ids].tolist() if len(ids) > 0 else []}")
+
         return died, time_out
 
     def _get_rewards(self) -> torch.Tensor:
